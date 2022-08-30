@@ -1,8 +1,8 @@
 import { INestApplication, VersioningType } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './AppModule'
+import Firebase from './Firebase'
 import OpenAPI from './OpenAPI'
-
 export class NestApp {
   private app: INestApplication = null
   private booted: boolean = false
@@ -12,6 +12,7 @@ export class NestApp {
     this.app.enableCors()
     this.app.setGlobalPrefix(process.env.APP_PREFIX)
     this.app.enableVersioning({ type: VersioningType.URI })
+    Firebase.boot()
     OpenAPI.setup(this.app)
 
     this.booted = true
@@ -23,5 +24,5 @@ export class NestApp {
       await this.app.listen(port)
     }
   }
-  public getApp = () => this.app
+  public close = () => this.app.close()
 }
