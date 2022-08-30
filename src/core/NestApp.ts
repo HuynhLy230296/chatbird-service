@@ -1,6 +1,7 @@
-import { INestApplication } from '@nestjs/common'
+import { INestApplication, VersioningType } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './AppModule'
+import OpenAPI from './OpenAPI'
 
 export class NestApp {
   private app: INestApplication = null
@@ -9,6 +10,10 @@ export class NestApp {
   public async boot() {
     this.app = await NestFactory.create(AppModule)
     this.app.enableCors()
+    this.app.setGlobalPrefix(process.env.APP_PREFIX)
+    this.app.enableVersioning({ type: VersioningType.URI })
+    OpenAPI.setup(this.app)
+
     this.booted = true
     return this
   }
@@ -18,4 +23,5 @@ export class NestApp {
       await this.app.listen(port)
     }
   }
+  public getApp = () => this.app
 }
