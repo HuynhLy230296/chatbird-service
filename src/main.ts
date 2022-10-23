@@ -1,7 +1,9 @@
-import { NestApp } from './core/NestApp'
 import * as dotenv from 'dotenv'
-declare const module: any
+import { NestApp } from './core/NestApp'
+
 dotenv.config()
+
+declare const module: any
 ;(async function () {
   const app = new NestApp()
   await app.boot()

@@ -1,27 +1,34 @@
 import { INestApplication, VersioningType } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
+
+import { ConfigService } from '@nestjs/config'
+import * as cookieParser from 'cookie-parser'
 import { AppModule } from './AppModule'
 import Firebase from './Firebase'
 import OpenAPI from './OpenAPI'
+
 export class NestApp {
   private app: INestApplication = null
   private booted: boolean = false
+  private configService: ConfigService = null
 
   public async boot() {
-    this.app = await NestFactory.create(AppModule)
-    this.app.enableCors()
-    this.app.setGlobalPrefix(process.env.APP_PREFIX)
-    this.app.enableVersioning({ type: VersioningType.URI })
     Firebase.boot()
+    this.app = await NestFactory.create(AppModule)
+    this.configService = this.app.get(ConfigService)
+    this.app.enableCors()
+    this.app.setGlobalPrefix(this.configService.get('APP_PREFIX'))
+    this.app.enableVersioning({ type: VersioningType.URI })
+    this.app.use(cookieParser())
     OpenAPI.setup(this.app)
 
     this.booted = true
     return this
   }
 
-  public async run(port: number = 3000) {
+  public async run() {
     if (this.booted) {
-      await this.app.listen(port)
+      await this.app.listen(this.configService.get('APP_PORT'))
     }
   }
   public close = () => this.app.close()

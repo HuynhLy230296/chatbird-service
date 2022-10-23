@@ -1,5 +1,4 @@
 import * as admin from 'firebase-admin'
-
 class Firebase {
   public boot() {
     const firbaseConfig = {
@@ -11,9 +10,9 @@ class Firebase {
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       }),
     }
-
-    admin.initializeApp(firbaseConfig)
+    if (!admin.apps.length) {
+      admin.initializeApp(firbaseConfig)
+    }
   }
 }
-
 export default new Firebase()

@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common'
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { ConfigService } from '@nestjs/config'
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 class OpenAPI {
   public setup(app: INestApplication) {
@@ -9,7 +10,8 @@ class OpenAPI {
       .setVersion('1.0')
       .build()
     const document = SwaggerModule.createDocument(app, config)
-    SwaggerModule.setup(process.env.APP_OPENAPI_PREFIX, app, document)
+    const configService = app.get(ConfigService)
+    SwaggerModule.setup(configService.get('APP_OPENAPI_PREFIX'), app, document)
   }
 }
 export default new OpenAPI()
