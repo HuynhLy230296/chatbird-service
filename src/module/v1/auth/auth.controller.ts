@@ -1,6 +1,6 @@
-import { Body, Controller, Post, Res } from '@nestjs/common'
+import { Body, Controller, Post, Req, Res } from '@nestjs/common'
 import { ApiResponse, ApiTags } from '@nestjs/swagger'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 import * as COOKIE from '../../../utils/constants/cookie'
 import { LoginDTO } from './auth.dto'
 import { AuthService } from './auth.service'
@@ -26,6 +26,19 @@ export class AuthController {
       })
       const result = { accessToken }
       return response.send(result)
+    } catch (e) {
+      return response.status(403).send()
+    }
+  }
+  @Post('refreshToken')
+  @ApiResponse({ status: 200, description: 'OK' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  refreshToken(@Req() request: Request, @Res() response: Response) {
+    try {
+      const refreshToken = request.cookies[COOKIE.KEYS.REFRESH_TOKEN]
+      const accessToken = this.authService.refreshToken(refreshToken)
+      const result = { accessToken }
+      return response.status(200).send(result)
     } catch (e) {
       return response.status(403).send()
     }
