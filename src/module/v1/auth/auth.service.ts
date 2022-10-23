@@ -26,7 +26,6 @@ export class AuthService {
     }
 
     const existUser = await this.userRepository.findUserByEmail(decodedIdToken.email)
-
     let userID: string
     if (!existUser) {
       await useTransaction(async () => {
@@ -35,9 +34,8 @@ export class AuthService {
     } else {
       userID = existUser.id
     }
-
     const refreshToken = this.jwtService.sign(
-      { userID: userID },
+      { userID: userID, email: decodedIdToken.email, name: decodedIdToken.name },
       {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
         expiresIn: this.configService.get('JWT_REFRESH_EXPIRED_IN'),
