@@ -28,7 +28,7 @@ export class AuthController {
       return response.send(result)
     } catch (e) {
       this.logger.error(`${request.hostname}- Login: ${e}`)
-      return response.status(403).send()
+      return response.status(403).end()
     }
   }
   @Post('refreshToken')
@@ -43,7 +43,7 @@ export class AuthController {
       return response.status(200).send(result)
     } catch (e) {
       this.logger.error(`${request.hostname}- RefreshToken: ${e}`)
-      return response.status(403).send()
+      return response.status(403).end()
     }
   }
   @Post('logout')
@@ -52,10 +52,10 @@ export class AuthController {
     try {
       this.logger.log(`${request.hostname}- Logout`)
       response.clearCookie(COOKIE.KEYS.REFRESH_TOKEN)
-      return response.status(200).send()
+      return response.status(200).end()
     } catch (e) {
       this.logger.error(`${request.hostname}- Logout: ${e}`)
-      return response.status(400).send()
+      return response.status(400).end()
     }
   }
 }
