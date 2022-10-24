@@ -27,8 +27,7 @@ export class AuthController {
       const result = { accessToken }
       return response.send(result)
     } catch (e) {
-      this.logger.error(`${request.hostname}- Login: ${e}`)
-      return response.status(403).end()
+      return response.status(403).send()
     }
   }
   @Post('refreshToken')
@@ -42,20 +41,7 @@ export class AuthController {
       const result = { accessToken }
       return response.status(200).send(result)
     } catch (e) {
-      this.logger.error(`${request.hostname}- RefreshToken: ${e}`)
-      return response.status(403).end()
-    }
-  }
-  @Post('logout')
-  @ApiResponse({ status: 200, description: 'OK' })
-  logout(@Req() request: Request, @Res() response: Response) {
-    try {
-      this.logger.log(`${request.hostname}- Logout`)
-      response.clearCookie(COOKIE.KEYS.REFRESH_TOKEN)
-      return response.status(200).end()
-    } catch (e) {
-      this.logger.error(`${request.hostname}- Logout: ${e}`)
-      return response.status(400).end()
+      return response.status(403).send()
     }
   }
 }
