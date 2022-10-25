@@ -46,4 +46,17 @@ export class AuthService {
 
     return [accessToken, refreshToken]
   }
+  public refreshToken(refreshToken: string) {
+    const tokenDecode = this.jwtService.verify(refreshToken, {
+      secret: this.configService.get('JWT_REFRESH_SECRET'),
+    })
+
+    if (tokenDecode) {
+      const claims = { email: tokenDecode.email, name: tokenDecode.name }
+      const accessToken = this.jwtService.sign(claims)
+      return accessToken
+    } else {
+      throw new Error('Token invalid')
+    }
+  }
 }
