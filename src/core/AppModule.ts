@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { APP_GUARD } from '@nestjs/core'
+import { JwtModule } from '@nestjs/jwt'
 import * as Joi from 'joi'
+import { AuthGuard } from 'src/guard/AuthGuard'
 import { AuthModule } from '../module/v1/auth/auth.module'
 
 const validationEnv = Joi.object({
@@ -32,7 +35,23 @@ const validationEnv = Joi.object({
         abortEarly: true,
       },
     }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_ACCESS_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_ACCESS_EXPIRED_IN'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
     AuthModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
   ],
 })
 export class AppModule {}
