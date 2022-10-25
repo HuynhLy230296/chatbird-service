@@ -8,6 +8,7 @@ class OpenAPI {
       .setTitle('chatbird-service')
       .setDescription('The chatbird-service api')
       .setVersion('1.0')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'Authorization' })
       .build()
     const document = SwaggerModule.createDocument(app, config)
     const configService = app.get(ConfigService)
