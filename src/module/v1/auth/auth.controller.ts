@@ -1,10 +1,11 @@
-import { Body, Controller, Logger, Post, Req, Res } from '@nestjs/common'
+import { Body, Controller, Logger, Post, Req, Res, UsePipes, ValidationPipe } from '@nestjs/common'
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Request, Response } from 'express'
 import { Authorization } from 'src/guard/AuthGuard'
 import * as COOKIE from 'src/utils/constants/cookie'
 import { LoginDTO } from './auth.dto'
 import { AuthService } from './auth.service'
+
 @ApiTags('auth')
 @Controller({
   path: 'auth',
@@ -17,6 +18,7 @@ export class AuthController {
   @Post('login')
   @ApiResponse({ status: 200, description: 'OK' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
+  @UsePipes(ValidationPipe)
   async login(@Body() body: LoginDTO, @Req() request: Request, @Res() response: Response) {
     try {
       this.logger.log(`${request.hostname}- Login`)
@@ -35,8 +37,6 @@ export class AuthController {
   @Post('refreshToken')
   @ApiResponse({ status: 200, description: 'OK' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
-  @ApiBearerAuth()
-  @Authorization()
   refreshToken(@Req() request: Request, @Res() response: Response) {
     try {
       this.logger.log(`${request.hostname}- RefreshToken`)

@@ -5,6 +5,7 @@ import useTransaction from 'src/database/hook/useTransaction'
 import User from 'src/entities/User'
 import UserRepository from 'src/repository/UserRepository'
 import { FirebaseAuth } from '../firebase/firebaseAuth.service'
+import { JWTClaim } from './auth.interface'
 
 @Injectable()
 export class AuthService {
@@ -34,14 +35,16 @@ export class AuthService {
     } else {
       userID = existUser.id
     }
-    const refreshToken = this.jwtService.sign(
-      { userID: userID, email: decodedIdToken.email, name: decodedIdToken.name },
-      {
-        secret: this.configService.get('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get('JWT_REFRESH_EXPIRED_IN'),
-      }
-    )
-    const claims = { email: decodedIdToken.email, name: decodedIdToken.name }
+    const claims: JWTClaim = {
+      userID: userID,
+      email: decodedIdToken.email,
+      name: decodedIdToken.name,
+    }
+    const refreshToken = this.jwtService.sign(claims, {
+      secret: this.configService.get('JWT_REFRESH_SECRET'),
+      expiresIn: this.configService.get('JWT_REFRESH_EXPIRED_IN'),
+    })
+
     const accessToken = this.jwtService.sign(claims)
 
     return [accessToken, refreshToken]
@@ -52,7 +55,11 @@ export class AuthService {
     })
 
     if (tokenDecode) {
-      const claims = { email: tokenDecode.email, name: tokenDecode.name }
+      const claims: JWTClaim = {
+        userID: tokenDecode.userID,
+        email: tokenDecode.email,
+        name: tokenDecode.name,
+      }
       const accessToken = this.jwtService.sign(claims)
       return accessToken
     } else {
