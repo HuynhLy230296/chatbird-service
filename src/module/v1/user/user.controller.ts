@@ -28,32 +28,35 @@ export class UserController {
   constructor(private readonly userService: UserService, private readonly jwtService: JwtService) {}
 
   @Get(':id')
+  @Authorization()
+  @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'OK' })
   @ApiResponse({ status: 400, description: 'Error' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
-  @ApiBearerAuth()
-  @Authorization()
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getUserInfo(@Param() params: GetUserInfoParams, @Req() request: Request) {
     const { hostname } = request
     const { id } = params
     try {
+      this.logger.log(`${hostname}- getUserInfo`)
       return await this.userService.getUserInfo(id)
     } catch (e) {
-      this.logger.error(`${hostname}- removeFriend: ${e}`)
+      this.logger.error(`${hostname}- getUserInfo: ${e}`)
       throw new BadRequestException(e.message)
     }
   }
-  @Authorization()
+
   @Patch('addFriend')
+  @Authorization()
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'OK' })
   @ApiResponse({ status: 400, description: 'Error' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async addFriend(@Body() body: AddFriendDTO, @Req() request: Request) {
     const { hostname } = request
     const { userID } = body
     const authorization = request.headers.authorization
     try {
+      this.logger.log(`${hostname}- addFriend`)
       const [_, token] = TokenUtil.getTokenString(authorization)
       const claims: JWTClaim = this.jwtService.verify(token)
       return await this.userService.addFriend(userID, claims.userID)
@@ -62,16 +65,19 @@ export class UserController {
       throw new BadGatewayException(e.message)
     }
   }
-  @Authorization()
+
   @Patch('removeFriend')
-  @ApiResponse({ status: 200, description: 'OK' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  @Authorization()
   @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'OK' })
+  @ApiResponse({ status: 400, description: 'Error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async removeFriend(@Body() body: RemoveFriendDTO, @Req() request: Request) {
     const { hostname } = request
     const { userID } = body
     const authorization = request.headers.authorization
     try {
+      this.logger.log(`${hostname}- removeFriend`)
       const [_, token] = TokenUtil.getTokenString(authorization)
       const claims: JWTClaim = this.jwtService.verify(token)
       return await this.userService.removeFriend(userID, claims.userID)
@@ -87,13 +93,15 @@ export class UserController {
     type: String,
   })
   @ApiResponse({ status: 200, description: 'OK' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  @ApiResponse({ status: 400, description: 'Error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiBearerAuth()
   @Authorization()
   async getRooms(@Param() params: GetRoomsParams, @Req() request: Request) {
     const { id } = params
     const { hostname } = request
     try {
+      this.logger.log(`${hostname}- getRooms`)
       return await this.userService.getRoomByUser(id)
     } catch (e) {
       this.logger.error(`${hostname}- getRooms: ${e}`)
