@@ -1,4 +1,4 @@
-import { INestApplication, VersioningType } from '@nestjs/common'
+import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 
 import { ConfigService } from '@nestjs/config'
@@ -6,6 +6,7 @@ import * as cookieParser from 'cookie-parser'
 import { AppModule } from './AppModule'
 import Firebase from './Firebase'
 import OpenAPI from './OpenAPI'
+import validationOptions from './ValidationOptions'
 
 export class NestApp {
   private app: INestApplication = null
@@ -20,6 +21,7 @@ export class NestApp {
     this.app.setGlobalPrefix(this.configService.get('APP_PREFIX'))
     this.app.enableVersioning({ type: VersioningType.URI })
     this.app.use(cookieParser())
+    this.app.useGlobalPipes(new ValidationPipe(validationOptions))
     OpenAPI.setup(this.app)
 
     this.booted = true

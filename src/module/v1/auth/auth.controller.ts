@@ -1,4 +1,16 @@
-import { Body, Controller, Logger, Post, Req, Res, UsePipes, ValidationPipe } from '@nestjs/common'
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  HttpStatus,
+  Logger,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common'
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Request, Response } from 'express'
 import { Authorization } from 'src/guard/AuthGuard'
@@ -17,11 +29,12 @@ export class AuthController {
 
   @Post('login')
   @ApiResponse({ status: 200, description: 'OK' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  @ApiResponse({ status: 400, description: 'Error' })
   @UsePipes(ValidationPipe)
   async login(@Body() body: LoginDTO, @Req() request: Request, @Res() response: Response) {
+    const { hostname } = request
     try {
-      this.logger.log(`${request.hostname}- Login`)
+      this.logger.log(`${hostname}- Login`)
       const { idToken } = body
       const [accessToken, refreshToken] = await this.authService.login(idToken)
       response.cookie(COOKIE.KEYS.REFRESH_TOKEN, refreshToken, {
@@ -30,23 +43,32 @@ export class AuthController {
       const result = { accessToken }
       return response.send(result)
     } catch (e) {
-      this.logger.error(`${request.hostname}- Login: ${e}`)
-      return response.status(403).end()
+      this.logger.error(`${hostname}- Login: ${e}`)
+
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: e.message,
+        error: 'Bad request',
+      })
     }
   }
   @Post('refreshToken')
   @ApiResponse({ status: 200, description: 'OK' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
-  refreshToken(@Req() request: Request, @Res() response: Response) {
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async refreshToken(@Req() request: Request) {
+    const { hostname } = request
     try {
-      this.logger.log(`${request.hostname}- RefreshToken`)
+      this.logger.log(`${hostname}- RefreshToken`)
       const refreshToken = request.cookies[COOKIE.KEYS.REFRESH_TOKEN]
-      const accessToken = this.authService.refreshToken(refreshToken)
+      const accessToken = await this.authService.refreshToken(refreshToken)
       const result = { accessToken }
-      return response.status(200).send(result)
+      return result
     } catch (e) {
-      this.logger.error(`${request.hostname}- RefreshToken: ${e}`)
-      return response.status(403).end()
+      this.logger.error(`${hostname}- RefreshToken: ${e}`)
+      if (e instanceof UnauthorizedException) {
+        throw new UnauthorizedException()
+      }
+      throw new BadRequestException(e.message)
     }
   }
   @Post('logout')
@@ -57,10 +79,10 @@ export class AuthController {
     try {
       this.logger.log(`${request.hostname}- Logout`)
       response.clearCookie(COOKIE.KEYS.REFRESH_TOKEN)
-      return response.status(200).end()
+      return
     } catch (e) {
       this.logger.error(`${request.hostname}- Logout: ${e}`)
-      return response.status(400).end()
+      throw new BadRequestException(e.message)
     }
   }
 }

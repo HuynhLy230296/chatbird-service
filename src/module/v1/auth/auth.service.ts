@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import useTransaction from 'src/database/hook/useTransaction'
 import User from 'src/entities/User'
-import UserRepository from 'src/repository/UserRepository'
+import UserRepository from 'src/repository/user.repository'
 import { FirebaseAuth } from '../firebase/firebaseAuth.service'
 import { JWTClaim } from './auth.interface'
 
@@ -18,14 +18,12 @@ export class AuthService {
 
   public async login(idToken: string) {
     const decodedIdToken = await this.firebaseAuth.vetifyIdToken(idToken)
-
     const user: User = {
       email: decodedIdToken.email,
       loginProvider: decodedIdToken.firebase.sign_in_provider,
       name: decodedIdToken.name,
       picture: decodedIdToken.picture,
     }
-
     const existUser = await this.userRepository.findUserByEmail(decodedIdToken.email)
     let userID: string
     if (!existUser) {
@@ -44,26 +42,28 @@ export class AuthService {
       secret: this.configService.get('JWT_REFRESH_SECRET'),
       expiresIn: this.configService.get('JWT_REFRESH_EXPIRED_IN'),
     })
-
     const accessToken = this.jwtService.sign(claims)
-
     return [accessToken, refreshToken]
   }
-  public refreshToken(refreshToken: string) {
-    const tokenDecode = this.jwtService.verify(refreshToken, {
-      secret: this.configService.get('JWT_REFRESH_SECRET'),
-    })
 
-    if (tokenDecode) {
-      const claims: JWTClaim = {
-        userID: tokenDecode.userID,
-        email: tokenDecode.email,
-        name: tokenDecode.name,
-      }
-      const accessToken = this.jwtService.sign(claims)
-      return accessToken
-    } else {
-      throw new Error('Token invalid')
+  public async refreshToken(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException()
     }
+    const claims: JWTClaim = await this.jwtService
+      .verifyAsync(refreshToken, {
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
+      })
+      .then((tokenDecode) => {
+        return {
+          userID: tokenDecode.userID,
+          email: tokenDecode.email,
+          name: tokenDecode.name,
+        }
+      })
+      .catch((e) => {
+        throw new UnauthorizedException(e.message)
+      })
+    return this.jwtService.sign(claims)
   }
 }
