@@ -1,24 +1,31 @@
+import { Injectable } from '@nestjs/common'
 import * as admin from 'firebase-admin'
 import User from 'src/entities/User'
+import { EntityNotFoundException } from 'src/exceptions/entity.exception'
 
+@Injectable()
 export default class UserRepository {
   private readonly collection = admin.firestore().collection('user')
   async findUserByID(id: string): Promise<User> {
-    const snap = await admin.firestore().collection('user').doc(id).get()
+    const snap = await this.collection.doc(id).get()
     const data = snap.data()
+    if (!snap.exists) {
+      throw new EntityNotFoundException('User not found')
+    }
     return {
       id,
       email: data.email,
       loginProvider: data.loginProvider,
       name: data.name,
       picture: data.picture,
+      rooms: data.rooms || [],
+      friends: data.friends || [],
     }
   }
   async findUserByEmail(email: string): Promise<User> {
     const snap = await this.collection.where('email', '==', email).limit(1).get()
-
     if (snap.empty) {
-      return null
+      throw new EntityNotFoundException('User not found')
     } else {
       const data = snap.docs[0].data()
       return {
@@ -27,6 +34,8 @@ export default class UserRepository {
         loginProvider: data.loginProvider,
         name: data.name,
         picture: data.picture,
+        rooms: data.rooms || [],
+        friends: data.friends || [],
       }
     }
   }

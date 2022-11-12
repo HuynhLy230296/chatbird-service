@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin'
+
 class Firebase {
   public boot() {
     const firbaseConfig = {
@@ -12,6 +13,9 @@ class Firebase {
     }
     if (!admin.apps.length) {
       admin.initializeApp(firbaseConfig)
+      admin.firestore().settings({
+        ignoreUndefinedProperties: true,
+      })
     }
   }
 }
