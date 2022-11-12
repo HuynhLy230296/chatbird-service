@@ -8,8 +8,6 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Request, Response } from 'express'
@@ -30,7 +28,6 @@ export class AuthController {
   @Post('login')
   @ApiResponse({ status: 200, description: 'OK' })
   @ApiResponse({ status: 400, description: 'Error' })
-  @UsePipes(ValidationPipe)
   async login(@Body() body: LoginDTO, @Req() request: Request, @Res() response: Response) {
     const { hostname } = request
     try {
@@ -55,6 +52,7 @@ export class AuthController {
   @Post('refreshToken')
   @ApiResponse({ status: 200, description: 'OK' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 400, description: 'Error' })
   async refreshToken(@Req() request: Request) {
     const { hostname } = request
     try {
@@ -71,10 +69,12 @@ export class AuthController {
       throw new BadRequestException(e.message)
     }
   }
+
   @Post('logout')
-  @ApiResponse({ status: 200, description: 'OK' })
-  @ApiBearerAuth()
   @Authorization()
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'OK' })
+  @ApiResponse({ status: 400, description: 'Error' })
   logout(@Req() request: Request, @Res() response: Response) {
     try {
       this.logger.log(`${request.hostname}- Logout`)

@@ -4,4 +4,6 @@ export default class User {
   loginProvider: string
   name: string
   picture: string
+  rooms?: Array<string>
+  friends?: Array<string>
 }
