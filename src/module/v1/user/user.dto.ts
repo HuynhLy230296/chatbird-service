@@ -19,22 +19,3 @@ export class RemoveFriendDTO {
   })
   userID: string
 }
-export class GetUserInfoParams {
-  @IsString({ message: 'friendID just allow string type' })
-  @IsNotEmpty({ message: 'friendID is require' })
-  @ApiProperty({
-    required: false,
-    nullable: true,
-  })
-  id: string
-}
-
-export class GetRoomsParams {
-  @IsString({ message: 'friendID just allow string type' })
-  @IsNotEmpty({ message: 'friendID is require' })
-  @ApiProperty({
-    required: false,
-    nullable: true,
-  })
-  id: string
-}

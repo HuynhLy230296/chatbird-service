@@ -12,10 +12,11 @@ import {
 import { JwtService } from '@nestjs/jwt'
 import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Request } from 'express'
+import { ParamNotFoundException } from 'src/exceptions/param.exception'
 import { Authorization } from 'src/guard/AuthGuard'
 import TokenUtil from 'src/utils/constants/tokenUtils'
 import { JWTClaim } from '../auth/auth.interface'
-import { AddFriendDTO, GetRoomsParams, GetUserInfoParams, RemoveFriendDTO } from './user.dto'
+import { AddFriendDTO, RemoveFriendDTO } from './user.dto'
 import UserService from './user.service'
 
 @ApiTags('User')
@@ -33,9 +34,13 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'OK' })
   @ApiResponse({ status: 400, description: 'Error' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getUserInfo(@Param() params: GetUserInfoParams, @Req() request: Request) {
+  async getUserInfo(@Param('id') id: string, @Req() request: Request) {
     const { hostname } = request
-    const { id } = params
+    console.log(id)
+    if (!id) {
+      console.log(id)
+      throw new ParamNotFoundException('Param id is not enter')
+    }
     try {
       this.logger.log(`${hostname}- getUserInfo`)
       return await this.userService.getUserInfo(id)
@@ -97,9 +102,11 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiBearerAuth()
   @Authorization()
-  async getRooms(@Param() params: GetRoomsParams, @Req() request: Request) {
-    const { id } = params
+  async getRooms(@Param('id') id: string, @Req() request: Request) {
     const { hostname } = request
+    if (!id) {
+      throw new ParamNotFoundException('Param id is not enter')
+    }
     try {
       this.logger.log(`${hostname}- getRooms`)
       return await this.userService.getRoomByUser(id)
