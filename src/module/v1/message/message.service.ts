@@ -94,5 +94,6 @@ export class MessageService {
       }
       return this.messageRepository.update(roomID, payload)
     })
+    return messageObj
   }
 }
