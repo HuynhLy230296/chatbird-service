@@ -36,9 +36,7 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getUserInfo(@Param('id') id: string, @Req() request: Request) {
     const { hostname } = request
-    console.log(id)
     if (!id) {
-      console.log(id)
       throw new ParamNotFoundException('Param id is not enter')
     }
     try {
