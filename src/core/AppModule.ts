@@ -3,12 +3,13 @@ import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD } from '@nestjs/core'
 import { AllExceptionsFilter } from 'src/filter/all-exception.filter'
 import { AuthGuard } from 'src/guard/AuthGuard'
+import { RoomModule } from 'src/module/v1/room/room.module'
 import { UserModule } from 'src/module/v1/user/user.module'
 import { AuthModule } from '../module/v1/auth/auth.module'
 import { CoreModule } from './CoreModule'
 
 @Module({
-  imports: [CoreModule, ConfigModule, AuthModule, UserModule],
+  imports: [CoreModule, ConfigModule, AuthModule, UserModule, RoomModule],
   providers: [
     {
       provide: APP_GUARD,
