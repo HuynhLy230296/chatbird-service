@@ -11,7 +11,7 @@ export default class UserService {
     user.friends = [...(user.friends || []), userID]
     user.friends = [...new Set(user.friends)]
     await useTransaction(async () => {
-      await this.userRepository.update(byUserID, user)
+      return this.userRepository.update(byUserID, user)
     })
     return this.getUserInfo(byUserID)
   }
@@ -19,7 +19,7 @@ export default class UserService {
     const user = await this.userRepository.findUserByID(byUserID)
     user.friends = user.friends ? user.friends.filter((id) => userID !== id) : []
     await useTransaction(async () => {
-      await this.userRepository.update(byUserID, user)
+      return this.userRepository.update(byUserID, user)
     })
     return this.getUserInfo(byUserID)
   }

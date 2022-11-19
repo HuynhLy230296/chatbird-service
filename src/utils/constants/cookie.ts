@@ -1,1 +1,3 @@
-export const KEYS = { REFRESH_TOKEN: 'refreshToken' }
+export enum KEYS {
+  REFRESH_TOKEN = 'refreshToken',
+}
