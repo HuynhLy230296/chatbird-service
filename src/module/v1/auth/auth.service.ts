@@ -18,7 +18,7 @@ export class AuthService {
 
   public async login(idToken: string) {
     const decodedIdToken = await this.firebaseAuth.vetifyIdToken(idToken)
-    const user: User = {
+    const user: Partial<User> = {
       email: decodedIdToken.email,
       loginProvider: decodedIdToken.firebase.sign_in_provider,
       name: decodedIdToken.name,

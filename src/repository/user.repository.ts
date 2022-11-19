@@ -39,7 +39,7 @@ export default class UserRepository {
       }
     }
   }
-  async insert(user: User): Promise<string> {
+  async insert(user: Partial<User>): Promise<string> {
     const res = await this.collection.add(user)
     return res.id
   }
