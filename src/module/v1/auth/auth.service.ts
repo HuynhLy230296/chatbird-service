@@ -26,10 +26,11 @@ export class AuthService {
     }
     const existUser = await this.userRepository.findUserByEmail(decodedIdToken.email)
     let userID: string
+
     if (!existUser) {
-      await useTransaction(async () => {
-        userID = await this.userRepository.insert(user)
-      })
+      userID = (await useTransaction(async () => {
+        return this.userRepository.insert(user)
+      })) as string
     } else {
       userID = existUser.id
     }
