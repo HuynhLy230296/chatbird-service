@@ -1,7 +1,8 @@
-import { Global, Module } from '@nestjs/common'
+import { Global, Module, Provider } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import * as Joi from 'joi'
+import { SocketClient } from './SocketClient'
 
 const validationEnv = Joi.object({
   APP_PREFIX: Joi.string().required(),
@@ -21,8 +22,16 @@ const validationEnv = Joi.object({
   JWT_ACCESS_EXPIRED_IN: Joi.string().required(),
   JWT_REFRESH_SECRET: Joi.string().required(),
   JWT_REFRESH_EXPIRED_IN: Joi.string().required(),
+
+  SOCKET_URL: Joi.string().required(),
 })
 
+const providers: Provider[] = [
+  {
+    provide: 'SOCKET_CLIENT',
+    useClass: SocketClient,
+  },
+]
 @Global()
 @Module({
   imports: [
@@ -44,6 +53,7 @@ const validationEnv = Joi.object({
       inject: [ConfigService],
     }),
   ],
-  exports: [JwtModule],
+  providers: providers,
+  exports: [JwtModule, ...providers],
 })
 export class CoreModule {}

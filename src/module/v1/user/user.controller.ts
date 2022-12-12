@@ -4,6 +4,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Logger,
   Param,
   Patch,
@@ -12,6 +13,7 @@ import {
 import { JwtService } from '@nestjs/jwt'
 import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Request } from 'express'
+import { SocketClient } from 'src/core/SocketClient'
 import { ParamNotFoundException } from 'src/exceptions/param.exception'
 import { Authorization } from 'src/guard/AuthGuard'
 import TokenUtil from 'src/utils/constants/tokenUtils'
@@ -26,7 +28,11 @@ import UserService from './user.service'
 })
 export class UserController {
   private readonly logger = new Logger(UserController.name)
-  constructor(private readonly userService: UserService, private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+    @Inject('SOCKET_CLIENT') private readonly socketClient: SocketClient
+  ) {}
 
   @Get(':id')
   @Authorization()
@@ -62,7 +68,7 @@ export class UserController {
       this.logger.log(`${hostname}- addFriend`)
       const [_, token] = TokenUtil.getTokenString(authorization)
       const claims: JWTClaim = this.jwtService.verify(token)
-      return await this.userService.addFriend(userID, claims.userID)
+      return await this.userService.addFriend(claims.userID, userID)
     } catch (e) {
       this.logger.error(`${hostname}- addFriend: ${e}`)
       throw new BadGatewayException(e.message)
@@ -107,9 +113,32 @@ export class UserController {
     }
     try {
       this.logger.log(`${hostname}- getRooms`)
-      return await this.userService.getRoomByUser(id)
+      return await this.userService.getRoomsByUser(id)
     } catch (e) {
       this.logger.error(`${hostname}- getRooms: ${e}`)
+      throw new BadRequestException(e.message)
+    }
+  }
+  @Get(':id/friends')
+  @ApiParam({
+    name: 'id',
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: 'OK' })
+  @ApiResponse({ status: 400, description: 'Error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiBearerAuth()
+  @Authorization()
+  async getFriends(@Param('id') id: string, @Req() request: Request) {
+    const { hostname } = request
+    if (!id) {
+      throw new ParamNotFoundException('Param id is not enter')
+    }
+    try {
+      this.logger.log(`${hostname}- getFriends`)
+      return await this.userService.getFriends(id)
+    } catch (e) {
+      this.logger.error(`${hostname}- getFriends: ${e}`)
       throw new BadRequestException(e.message)
     }
   }

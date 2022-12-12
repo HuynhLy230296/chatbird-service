@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import * as dayjs from 'dayjs'
 import useTransaction from 'src/database/hook/useTransaction'
 import Message, { GroupMessage } from 'src/entities/Message'
@@ -9,7 +9,9 @@ import { MESSAGE_TYPE } from 'src/utils/constants/entity'
 
 @Injectable()
 export class MessageService {
+  private logger: Logger = new Logger(MessageService.name)
   constructor(private readonly messageRepository: MessageRepository) {}
+
   async getLastMessages(roomID: string) {
     const group = await this.messageRepository.findLastMessageGroup(roomID)
     const lastMessages = group.messages || []
@@ -65,6 +67,7 @@ export class MessageService {
     const isNewGroup = MAX_GROUP_MESSAGE <= (lastMessageGroup?.messages || []).length
     const groupID = !lastMessageGroup || isNewGroup ? generateUUID() : lastMessageGroup.id
     const time = dayjs().valueOf()
+
     const messageObj: Message = {
       id: generateUUID(),
       type: MESSAGE_TYPE.TEXT,
@@ -95,5 +98,15 @@ export class MessageService {
       return this.messageRepository.update(roomID, payload)
     })
     return messageObj
+  }
+  async initMessagesOfRoom(roomID: string, lastGroup: string) {
+    const data = {
+      lastGroup: lastGroup,
+      [lastGroup]: {
+        messages: [],
+      },
+    }
+    await this.messageRepository.insertWithID(roomID, data)
+    return roomID
   }
 }

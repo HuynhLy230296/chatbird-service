@@ -1,36 +1,51 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import useTransaction from 'src/database/hook/useTransaction'
 import Room from 'src/entities/Room'
-import RoomRepository from 'src/repository/room.repository'
 import UserRepository from 'src/repository/user.repository'
-import { generateUUID } from 'src/utils'
+import { MessageService } from '../message/message.service'
+import { RoomService } from '../room/room.service'
 import { UserResponse } from './user.response'
 
 @Injectable()
 export default class UserService {
+  private logger: Logger = new Logger(UserService.name)
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly roomRepository: RoomRepository
+    private readonly roomService: RoomService,
+    private readonly messageService: MessageService
   ) {}
-  public async addFriend(userID: string, byUserID: string): Promise<UserResponse> {
-    if (userID === byUserID) {
+  public async addFriend(userID: string, friendID: string): Promise<UserResponse> {
+    if (userID === friendID) {
       throw Error('Cannot add friend with myself')
     }
-    const user = await this.userRepository.findUserByID(byUserID)
-    user.friends = [...(user.friends || []), userID]
-    user.friends = [...new Set(user.friends)]
 
+    const user = await this.userRepository.findUserByID(userID)
+    const userFriends = user.friends || []
+    if (userFriends.some((id) => id === friendID)) {
+      throw Error('Had friend')
+    }
+
+    user.friends = [...(user.friends || []), friendID]
+    const friend = await this.userRepository.findUserByID(friendID)
+    friend.friends = [...(friend.friends || []), userID]
     await useTransaction(async () => {
       const room = {
         title: null,
-        users: [byUserID, userID],
-        presentGroup: generateUUID(),
+        users: [userID, friendID],
       } as Partial<Room>
-      const roomID = (await this.roomRepository.insert(room)) as string
-      user.rooms = [...(user.rooms || []), roomID]
-      return this.userRepository.update(byUserID, user)
+
+      const roomCreated = await this.roomService.createRoom(room)
+
+      user.rooms = [...(user.rooms || []), roomCreated.id]
+      friend.rooms = [...(friend.rooms || []), roomCreated.id]
+
+      const promises = [
+        this.userRepository.update(userID, user),
+        this.userRepository.update(friendID, friend),
+      ]
+      return Promise.all(promises)
     })
-    return this.getUserInfo(byUserID)
+    return this.getUserInfo(userID)
   }
   public async removeFriend(userID: string, byUserID: string): Promise<UserResponse> {
     const user = await this.userRepository.findUserByID(byUserID)
@@ -40,10 +55,22 @@ export default class UserService {
     })
     return this.getUserInfo(byUserID)
   }
-
-  public async getRoomByUser(userID: string): Promise<String[]> {
+  public async getRoomsByUser(userID: string): Promise<any> {
     const user = await this.userRepository.findUserByID(userID)
-    return user.rooms
+    const promises = user.rooms?.map(async (roomID: string) => {
+      const { messages } = await this.messageService.getLastMessages(roomID)
+
+      const roomInfo = await this.roomService.getRoomInfo(roomID)
+      const lastMessage = messages[messages.length - 1] || null
+      return {
+        id: roomInfo.id,
+        title: roomInfo.title,
+        members: roomInfo.users,
+        message: lastMessage,
+      }
+    })
+    const messages = await Promise.all(promises)
+    return messages
   }
   public async getUserInfo(userID: string): Promise<UserResponse> {
     const user = await this.userRepository.findUserByID(userID)
@@ -54,7 +81,19 @@ export default class UserService {
       name: user.name,
       picture: user.picture,
       rooms: user.rooms,
-      friends: user.friends,
     }
+  }
+  public async getFriends(userID: string): Promise<any> {
+    const user = await this.userRepository.findUserByID(userID)
+    const promises = user.friends.map(async (id: string) => {
+      const user = await this.userRepository.findUserByID(id)
+      return {
+        id: user.id,
+        avatar: user.picture,
+        name: user.name,
+      }
+    })
+    const users = await Promise.all(promises)
+    return users
   }
 }

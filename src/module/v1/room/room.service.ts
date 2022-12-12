@@ -6,12 +6,14 @@ import RoomRepository from 'src/repository/room.repository'
 import UserRepository from 'src/repository/user.repository'
 
 import { generateUUID } from 'src/utils'
+import { MessageService } from '../message/message.service'
 import { CreateRoomDTO, UpdateRoomDTO } from './room.dto'
 @Injectable()
 export class RoomService {
   constructor(
     private readonly roomRepository: RoomRepository,
-    private readonly userRepository: UserRepository
+    private readonly userRepository: UserRepository,
+    private readonly messageService: MessageService
   ) {}
   async getRoomInfo(roomID: string) {
     const room = await this.roomRepository.findRoomByID(roomID)
@@ -41,14 +43,16 @@ export class RoomService {
     }
   }
 
-  async createRoom(roomInfo: CreateRoomDTO) {
+  async createRoom(roomInfo: CreateRoomDTO | Partial<Room>) {
     const room = {
       title: roomInfo.title,
       users: roomInfo.users,
       presentGroup: generateUUID(),
     } as Partial<Room>
+
     const id = await useTransaction(async () => {
-      return this.roomRepository.insert(room)
+      const idRoom = await this.roomRepository.insert(room)
+      return this.messageService.initMessagesOfRoom(idRoom, room.presentGroup)
     })
     return { id, ...room } as Room
   }

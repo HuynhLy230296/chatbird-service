@@ -24,16 +24,17 @@ export class AuthService {
       name: decodedIdToken.name,
       picture: decodedIdToken.picture,
     }
-    const existUser = await this.userRepository.findUserByEmail(decodedIdToken.email)
-    let userID: string
 
-    if (!existUser) {
+    let userID: string
+    try {
+      const user = await this.userRepository.findUserByEmail(decodedIdToken.email)
+      userID = user.id
+    } catch (e) {
       userID = (await useTransaction(async () => {
         return this.userRepository.insert(user)
       })) as string
-    } else {
-      userID = existUser.id
     }
+
     const claims: JWTClaim = {
       userID: userID,
       email: decodedIdToken.email,

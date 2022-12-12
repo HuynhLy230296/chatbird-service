@@ -14,10 +14,14 @@ export class NestApp {
   private configService: ConfigService = null
 
   public async boot() {
+    const origin = 'http://localhost:8080'
     Firebase.boot()
     this.app = await NestFactory.create(AppModule)
     this.configService = this.app.get(ConfigService)
-    this.app.enableCors()
+    this.app.enableCors({
+      credentials: true,
+      origin,
+    })
     this.app.setGlobalPrefix(this.configService.get('APP_PREFIX'))
     this.app.enableVersioning({ type: VersioningType.URI })
     this.app.use(cookieParser())
