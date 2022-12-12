@@ -1,7 +1,8 @@
-import { Logger, UseGuards } from '@nestjs/common'
+import { Inject, Logger, UseGuards } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { SubscribeMessage, WebSocketServer } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
+import { SocketClient } from 'src/core/SocketClient'
 import { WsGuard } from 'src/guard/WsGuard'
 import { JWTClaim } from 'src/module/v1/auth/auth.interface'
 import { MessageService } from 'src/module/v1/message/message.service'
@@ -13,8 +14,15 @@ export class ChatRoomGateway extends ChatBirdGateway {
   @WebSocketServer()
   private server: Server
   private logger: Logger = new Logger(ChatRoomGateway.name)
-  constructor(jwtService: JwtService, protected messageService: MessageService) {
-    super(jwtService, messageService)
+  @Inject('SOCKET_CLIENT')
+  private readonly socketClient: SocketClient
+  @Inject()
+  private readonly jwtService: JwtService
+  @Inject()
+  private readonly messageService: MessageService
+
+  constructor() {
+    super()
   }
 
   @SubscribeMessage('messages')
@@ -29,5 +37,7 @@ export class ChatRoomGateway extends ChatBirdGateway {
       claims.userID
     )
     this.server.emit(payload.roomID, messageObj)
+    this.socketClient.connect(bearerToken)
+    this.socketClient.emit('notification', {})
   }
 }

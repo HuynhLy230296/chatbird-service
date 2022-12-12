@@ -10,5 +10,4 @@ export interface UserResponse {
   name: string
   picture: string
   rooms: String[]
-  friends: String[]
 }

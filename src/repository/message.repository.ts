@@ -10,7 +10,7 @@ export class MessageRepository {
   async findLastMessageGroup(roomID: string) {
     const snap = await this.collection.doc(roomID).get()
     if (!snap.exists) {
-      throw new EntityNotFoundException('User not found')
+      throw new EntityNotFoundException('Message not found')
     }
 
     const lastGroupID = snap.get('lastGroup')
@@ -29,7 +29,7 @@ export class MessageRepository {
   async findMessageGroupByID(roomID: string, groupID: string) {
     const snap = await this.collection.doc(roomID).get()
     if (!snap.exists) {
-      throw new EntityNotFoundException('User not found')
+      throw new EntityNotFoundException('Message not found')
     }
     const data = snap.get(groupID)
     let messages = data.messages || []
@@ -43,7 +43,7 @@ export class MessageRepository {
   async findMessageBy(roomID: string, messageID: string, groupID: string): Promise<Message> {
     const snap = await this.collection.doc(roomID).get()
     if (!snap.exists) {
-      throw new EntityNotFoundException('User not found')
+      throw new EntityNotFoundException('Message not found')
     }
     const data = snap.get(groupID)
     const message: Message = data.messages.find((mes: Message) => mes.id === messageID)
@@ -77,5 +77,9 @@ export class MessageRepository {
       { merge: true }
     )
     return true
+  }
+  async insertWithID(roomID: string, data: any): Promise<string> {
+    await this.collection.doc(roomID).set(data)
+    return roomID
   }
 }
