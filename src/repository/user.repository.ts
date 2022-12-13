@@ -53,7 +53,15 @@ export default class UserRepository {
     if (snaps.empty) {
       return []
     }
-    const users = snaps.docs.map((o) => o.data())
+    const users = snaps.docs.map((o) => {
+      const data = o.data()
+      return {
+        id: o.id,
+        picture: data.picture,
+        name: data.name,
+        email: data.email,
+      }
+    })
     return users
   }
   async insert(user: Partial<User>): Promise<string> {
