@@ -17,7 +17,7 @@ export class MessageService {
     let previousGroupID = group.previousGroup
     let groupID = group.id
     let lastMessages = group.messages || []
-    if (NUMBER_OF_MESSAGE > lastMessages.length) {
+    if (NUMBER_OF_MESSAGE > lastMessages.length && previousGroupID) {
       const preGroup = await this.messageRepository.findMessageGroupByID(
         roomID,
         group.previousGroup
