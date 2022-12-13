@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import * as admin from 'firebase-admin'
 import User from 'src/entities/User'
 import { EntityNotFoundException } from 'src/exceptions/entity.exception'
+import { LIMIT_USER_PER_REQUEST } from 'src/utils/constants'
 
 @Injectable()
 export default class UserRepository {
+  private logger: Logger = new Logger(UserRepository.name)
   private readonly collection = admin.firestore().collection('user')
   async findUserByID(id: string): Promise<User> {
     const snap = await this.collection.doc(id).get()
@@ -38,6 +40,21 @@ export default class UserRepository {
         friends: data.friends || [],
       }
     }
+  }
+  async getAll(id: string, offset: number, limit: number = LIMIT_USER_PER_REQUEST) {
+    const snapUser = await this.collection.doc(id).get()
+    const user = snapUser.data()
+    const friends = user.friends || []
+    const snaps = await this.collection
+      .where('id', 'not-in', [...friends, id])
+      .offset((offset - 1) * limit)
+      .limit(limit)
+      .get()
+    if (snaps.empty) {
+      return []
+    }
+    const users = snaps.docs.map((o) => o.data())
+    return users
   }
   async insert(user: Partial<User>): Promise<string> {
     const res = await this.collection.add(user)

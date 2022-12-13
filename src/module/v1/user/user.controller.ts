@@ -8,10 +8,11 @@ import {
   Logger,
   Param,
   Patch,
+  Query,
   Req,
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { ApiBearerAuth, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Request } from 'express'
 import { SocketClient } from 'src/core/SocketClient'
 import { ParamNotFoundException } from 'src/exceptions/param.exception'
@@ -33,6 +34,30 @@ export class UserController {
     private readonly jwtService: JwtService,
     @Inject('SOCKET_CLIENT') private readonly socketClient: SocketClient
   ) {}
+
+  @Get('/all')
+  @Authorization()
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'OK' })
+  @ApiResponse({ status: 400, description: 'Error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiQuery({
+    name: 'offset',
+    type: Number,
+  })
+  async getUsers(@Query('offset') offset: number, @Req() request: Request) {
+    const { hostname } = request
+    const authorization = request.headers.authorization
+    try {
+      this.logger.log(`${hostname}- getUsers`)
+      const [_, token] = TokenUtil.getTokenString(authorization)
+      const claims: JWTClaim = this.jwtService.verify(token)
+      return await this.userService.getUsersWithoutFriend(claims.userID, offset)
+    } catch (e) {
+      this.logger.error(`${hostname}- getUsers: ${e}`)
+      throw new BadRequestException(e.message)
+    }
+  }
 
   @Get(':id')
   @Authorization()

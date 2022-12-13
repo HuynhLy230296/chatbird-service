@@ -4,7 +4,7 @@ import Room from 'src/entities/Room'
 import UserRepository from 'src/repository/user.repository'
 import { MessageService } from '../message/message.service'
 import { RoomService } from '../room/room.service'
-import { UserResponse } from './user.response'
+import { FriendResponse, UserResponse } from './user.response'
 
 @Injectable()
 export default class UserService {
@@ -83,17 +83,35 @@ export default class UserService {
       rooms: user.rooms,
     }
   }
-  public async getFriends(userID: string): Promise<any> {
+  public async getFriends(userID: string): Promise<FriendResponse[]> {
     const user = await this.userRepository.findUserByID(userID)
     const promises = user.friends.map(async (id: string) => {
       const user = await this.userRepository.findUserByID(id)
       return {
         id: user.id,
-        avatar: user.picture,
+        picture: user.picture,
         name: user.name,
       }
     })
     const users = await Promise.all(promises)
     return users
+  }
+  public async getUsersWithoutFriend(
+    userID: string,
+    offset: number
+  ): Promise<Partial<UserResponse>[]> {
+    if (Number.isInteger(offset)) {
+      throw Error('ofset field must type integer')
+    }
+    if (offset <= 0) {
+      throw Error('ofset field must > 0')
+    }
+    const users = (await this.userRepository.getAll(userID, offset)) || []
+    return users?.map((o) => ({
+      id: o.id,
+      picture: o.picture,
+      name: o.name,
+      email: o.email,
+    }))
   }
 }
