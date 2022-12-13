@@ -11,3 +11,8 @@ export interface UserResponse {
   picture: string
   rooms: String[]
 }
+export interface FriendResponse {
+  id: string
+  picture: string
+  name: string
+}

@@ -4,7 +4,7 @@ import useTransaction from 'src/database/hook/useTransaction'
 import Message, { GroupMessage } from 'src/entities/Message'
 import { MessageRepository } from 'src/repository/message.repository'
 import { generateUUID } from 'src/utils'
-import { MAX_GROUP_MESSAGE } from 'src/utils/constants'
+import { MAX_GROUP_MESSAGE, NUMBER_OF_MESSAGE } from 'src/utils/constants'
 import { MESSAGE_TYPE } from 'src/utils/constants/entity'
 
 @Injectable()
@@ -14,7 +14,18 @@ export class MessageService {
 
   async getLastMessages(roomID: string) {
     const group = await this.messageRepository.findLastMessageGroup(roomID)
-    const lastMessages = group.messages || []
+    let previousGroupID = group.previousGroup
+    let groupID = group.id
+    let lastMessages = group.messages || []
+    if (NUMBER_OF_MESSAGE > lastMessages.length && previousGroupID) {
+      const preGroup = await this.messageRepository.findMessageGroupByID(
+        roomID,
+        group.previousGroup
+      )
+      previousGroupID = preGroup.previousGroup
+      groupID = preGroup.id
+      lastMessages = [...lastMessages, ...(preGroup.messages || [])]
+    }
     const promises = lastMessages.map(async (mes: Message) => {
       let replyMessage = null
       if (mes.replyFor) {
@@ -32,8 +43,8 @@ export class MessageService {
     const messages = await Promise.all(promises)
     return {
       messages,
-      groupID: group.id,
-      previousGroup: group.previousGroup,
+      groupID: groupID,
+      previousGroup: previousGroupID,
     }
   }
   async getMessagesByGroup(roomID: string, groupID: string) {
@@ -60,6 +71,7 @@ export class MessageService {
       previousGroup: group.previousGroup,
     }
   }
+  async findMessageGroup(roomID: string, groupID: string) {}
   async addMessage(roomID: string, message: string, sender: string) {
     const lastMessageGroup = await this.messageRepository
       .findLastMessageGroup(roomID)
