@@ -46,7 +46,7 @@ export default class UserRepository {
     const user = snapUser.data()
     const friends = user.friends || []
     const snaps = await this.collection
-      .where('id', 'not-in', [...friends, id])
+      .where(admin.firestore.FieldPath.documentId(), 'not-in', [...friends, id])
       .offset((offset - 1) * limit)
       .limit(limit)
       .get()
